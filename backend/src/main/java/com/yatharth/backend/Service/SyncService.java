@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class SyncService {
@@ -22,6 +23,7 @@ public class SyncService {
     private final QuestionRepository questionRepo;
     private final SolvedQuestionRepository solvedQuestionRepo;
     private final UserRepository userRepo;
+
 
     public SyncService(
             QuestionRepository questionRepo,
@@ -33,94 +35,69 @@ public class SyncService {
         this.userRepo = userRepo;
     }
 
-
+    @Transactional
     public ResponseEntity<?> syncQuestions(SyncRequest request, String username) {
         User user = userRepo.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        List<QuestionDto> questionDtos = request.getProblems();
-        if (questionDtos == null || questionDtos.isEmpty()) {
+        List<QuestionDto> dtos = request.getProblems();
+
+        if (dtos == null || dtos.isEmpty()) {
             return ResponseEntity.badRequest().body("No problems received");
         }
 
+        Set<String> incomingSlugs = dtos.stream()
+                .map(QuestionDto::getSlug)
+                .collect(Collectors.toSet());
 
-        if (user.getLastSyncedAt() == null) {
-            firstTimeSync(questionDtos, user);
-            return ResponseEntity.ok("FIRST_SYNC_SUCCESS");
-        }
+        List<Question> existingQuestions =
+                questionRepo.findBySlugIn(incomingSlugs);
 
-        // Incremental sync
-        List<SolvedQuestion> newlySolved = new ArrayList<>();
+        Map<String, Question> slugToQuestion =
+                existingQuestions.stream()
+                        .collect(Collectors.toMap(
+                                Question::getSlug,
+                                q -> q
+                        ));
 
-        for (QuestionDto dto : questionDtos) {
+        List<Question> newQuestions = new ArrayList<>();
 
-            if (!"SOLVED".equalsIgnoreCase(dto.getStatus())) {
-                continue;
-            }
+        for (QuestionDto dto : dtos) {
 
+            if (!slugToQuestion.containsKey(dto.getSlug())) {
 
-            Optional<Question> questionOpt = questionRepo.findBySlug(dto.getSlug());
-            if (questionOpt.isEmpty()) {
-                continue;
-            }
-
-            Question question = questionOpt.get();
-
-            boolean alreadySolved =
-                    solvedQuestionRepo.existsByUserIdAndQuestionSlug(
-                            user.getId(),
-                            question.getSlug()
-                    );
-
-            if (!alreadySolved) {
-                SolvedQuestion solved = SolvedQuestion.builder()
-                        .user(user)
-                        .question(question)
-                        .build();
-
-                newlySolved.add(solved);
-            }
-        }
-
-        if (!newlySolved.isEmpty()) {
-            solvedQuestionRepo.saveAllAndFlush(newlySolved);
-        }
-
-        user.setLastSyncedAt(LocalDateTime.now());
-        userRepo.saveAndFlush(user);
-        return ResponseEntity.ok("INCREMENTAL_SYNC_SUCCESS");
-    }
-
-    @Transactional
-    protected void firstTimeSync(List<QuestionDto> questionDtos, User user) {
-
-        // 1️⃣ Fetch existing slugs ONCE
-        List<String> existingSlugs = questionRepo.findAllSlugs();
-        Set<String> slugSet = new HashSet<>(existingSlugs);
-
-        List<Question> questionsToSave = new ArrayList<>();
-        List<SolvedQuestion> solvedToSave = new ArrayList<>();
-
-        for (QuestionDto dto : questionDtos) {
-
-            Question question;
-
-            if (slugSet.contains(dto.getSlug())) {
-                question = questionRepo.getReferenceBySlug(dto.getSlug());
-            } else {
-                question = Question.builder()
+                Question question = Question.builder()
                         .frontendId(dto.getFrontendId())
                         .title(dto.getTitle())
                         .slug(dto.getSlug())
                         .difficulty(dto.getDifficulty())
                         .build();
 
-                questionsToSave.add(question);
-                slugSet.add(dto.getSlug());
+                newQuestions.add(question);
+                slugToQuestion.put(dto.getSlug(), question);
+            }
+        }
+
+        if (!newQuestions.isEmpty()) {
+            questionRepo.saveAll(newQuestions);
+        }
+
+        Set<String> alreadySolvedSlugs =
+                solvedQuestionRepo.findSolvedSlugsByUserId(user.getId());
+
+        List<SolvedQuestion> newSolved = new ArrayList<>();
+
+        for (QuestionDto dto : dtos) {
+
+            if (!"SOLVED".equalsIgnoreCase(dto.getStatus())) {
+                continue;
             }
 
-            if ("SOLVED".equalsIgnoreCase(dto.getStatus())) {
-                solvedToSave.add(
+            if (!alreadySolvedSlugs.contains(dto.getSlug())) {
+
+                Question question = slugToQuestion.get(dto.getSlug());
+
+                newSolved.add(
                         SolvedQuestion.builder()
                                 .user(user)
                                 .question(question)
@@ -129,12 +106,16 @@ public class SyncService {
             }
         }
 
-        questionRepo.saveAll(questionsToSave);
-        solvedQuestionRepo.saveAll(solvedToSave);
+        if (!newSolved.isEmpty()) {
+            solvedQuestionRepo.saveAll(newSolved);
+        }
 
         user.setLastSyncedAt(LocalDateTime.now());
         userRepo.save(user);
+
+        return ResponseEntity.ok("SYNC_SUCCESS");
     }
+
 
     public ResponseEntity<?> lastSyncedAt(String username) {
         User user = userRepo.findByUsername(username)

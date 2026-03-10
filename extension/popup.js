@@ -264,8 +264,13 @@ async function syncToBackend() {
   if (isSyncing) return;
   isSyncing = true;
 
-  const { APP_JWT_TOKEN, allProblems } =
-    await chrome.storage.local.get(["APP_JWT_TOKEN", "allProblems"]);
+  const data = await new Promise(resolve =>
+    chrome.storage.local.get(["APP_JWT_TOKEN", "allProblems"], resolve)
+  );
+
+  const { APP_JWT_TOKEN, allProblems } = data;
+  console.log("Token:", APP_JWT_TOKEN);
+  console.log("Problems length:", allProblems?.length);
   
   try {
     const res = await fetchWithTimeout(

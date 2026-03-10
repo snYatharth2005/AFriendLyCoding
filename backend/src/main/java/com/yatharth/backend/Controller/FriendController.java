@@ -41,7 +41,7 @@ public class FriendController {
 
     @GetMapping("request/check")
     public ResponseEntity<?> requestCheck(@RequestParam String senderUsername, @RequestParam String receiverUsername, Principal principal){
-        return service.requestCheck(senderUsername, receiverUsername, principal.getName());
+        return service.requestCheck(senderUsername, receiverUsername);
     }
 
     @GetMapping("requests/incoming")

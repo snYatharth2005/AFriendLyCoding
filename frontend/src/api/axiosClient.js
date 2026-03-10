@@ -40,10 +40,13 @@ export const checkLoginState = async () => {
   return response.data;
 }
 
-export const getSolvedQuestion = async () => {
-  const response = await axiosClient.get(`/questions/get`);
+export const getSolvedQuestion = async (username) => {
+  const response = await axiosClient.get(`/questions/get/${username}`);
   return response.data;
 }
+
+
+
 
 export const searchUsers = async (query) => {
   const response = await axiosClient.get(

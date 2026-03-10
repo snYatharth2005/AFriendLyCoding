@@ -1,11 +1,13 @@
 package com.yatharth.backend.Repository;
 
 import com.yatharth.backend.Model.SolvedQuestion;
+import com.yatharth.backend.Model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public interface SolvedQuestionRepository extends JpaRepository<SolvedQuestion, Long> {
@@ -24,5 +26,19 @@ public interface SolvedQuestionRepository extends JpaRepository<SolvedQuestion, 
           and sq.question.slug = :slug
     """)
     Boolean existsByUserIdAndQuestionSlug(Long userId, String slug);
+
+    @Query("""
+    select sq.question.frontendId, sq.user
+        from SolvedQuestion sq
+        where sq.question.frontendId in :ids
+""")
+    List<Object[]> findUsersByQuestionIds(Set<String> ids);
+
+    @Query("""
+    select sq.question.slug
+    from SolvedQuestion sq
+    where sq.user.id = :userId
+""")
+    Set<String> findSolvedSlugsByUserId(Long userId);
 
 }

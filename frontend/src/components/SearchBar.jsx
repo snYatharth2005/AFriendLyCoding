@@ -37,43 +37,48 @@ const SearchBar = () => {
         setOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   return (
-    <div ref={wrapperRef} className="relative w-full max-w-md">
-      {/* ================= SEARCH INPUT ================= */}
-      <div className="bg-[#11131a] border border-white/10 rounded-xl px-4 py-2 shadow-md">
+    <div ref={wrapperRef} className="relative w-full max-w-sm">
+      {/* ================= INPUT ================= */}
+      <div className="relative flex items-center">
+        <svg
+          className="absolute left-3 w-4 h-4 text-[#50566a] pointer-events-none"
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
         <input
           type="text"
           placeholder="Search users..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="
-            w-full bg-transparent
-            text-sm text-white
-            placeholder-white/40
-            focus:outline-none
+            w-full
+            bg-[#161820] border border-white/[0.08]
+            rounded-xl pl-9 pr-4 py-2
+            text-sm text-[#f0f2f8] placeholder-[#50566a]
+            focus:outline-none focus:border-[#00d084]/40
+            focus:ring-2 focus:ring-[#00d084]/10
+            transition-all duration-200
           "
         />
       </div>
 
-      {/* ================= SEARCH RESULTS ================= */}
+      {/* ================= DROPDOWN ================= */}
       {open && (
         <div
           className="
-            absolute mt-2 w-full
-            bg-[#0f1117]
-            border border-white/10
-            rounded-xl
-            shadow-2xl
-            overflow-hidden
-            z-50
+            absolute top-full mt-2 w-full z-50
+            bg-[#11131a] border border-white/[0.08]
+            rounded-xl overflow-hidden
+            shadow-[0_8px_32px_rgba(0,0,0,0.5)]
           "
         >
-          {Array.isArray(results) && results.length > 0 ? (
+          {results.length > 0 ? (
             results.map((user) => (
               <div
                 key={user.id}
@@ -83,38 +88,36 @@ const SearchBar = () => {
                   setOpen(false);
                 }}
                 className="
-                  flex items-center gap-3
-                  px-4 py-3
-                  cursor-pointer
-                  hover:bg-white/5
-                  transition
+                  flex items-center gap-3 px-4 py-3
+                  cursor-pointer hover:bg-white/[0.04]
+                  transition-colors border-b border-white/[0.04] last:border-0
                 "
               >
                 {/* Avatar */}
-                <div
-                  className="
-                  w-9 h-9 rounded-full
-                  bg-blue-600/30
-                  flex items-center justify-center
-                  text-blue-400 font-semibold
-                "
-                >
-                  {user.avatar ? <img src={user.avatar} alt={user.username} className="w-9 h-9 rounded-full" /> : user.username[0].toUpperCase()}
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#a855f7] to-[#3b82f6] flex items-center justify-center text-sm font-bold text-white flex-shrink-0 overflow-hidden">
+                  {user.avatar
+                    ? <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
+                    : user.username[0].toUpperCase()
+                  }
                 </div>
 
-                {/* User Info */}
-                <div className="flex flex-col">
-                  <span className="text-sm text-white font-medium">
+                {/* Info */}
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-[#f0f2f8] truncate">
                     {user.username}
-                  </span>
-                  <span className="text-xs text-white/40">
+                  </p>
+                  <p className="text-xs text-[#50566a] truncate">
                     {user.name || "AFriendlyCoding user"}
-                  </span>
+                  </p>
                 </div>
+
+                <svg className="w-4 h-4 text-[#50566a] ml-auto flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
               </div>
             ))
           ) : (
-            <div className="px-4 py-3 text-sm text-white/40">
+            <div className="px-4 py-4 text-sm text-[#50566a] text-center font-mono">
               No users found
             </div>
           )}

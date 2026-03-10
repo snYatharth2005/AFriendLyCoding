@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface QuestionRepository extends JpaRepository<Question, Long> {
@@ -20,4 +21,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
 
     @Query("select q from Question q where q.slug = :slug")
     Question getReferenceBySlug(String slug);
+
+    @Query("select q from Question q where q.slug in :slugs")
+    List<Question> findBySlugIn(Set<String> slugs);
 }

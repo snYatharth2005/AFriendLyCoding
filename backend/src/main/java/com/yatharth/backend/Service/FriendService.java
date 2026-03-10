@@ -77,13 +77,14 @@ public class FriendService {
 
     public ResponseEntity<FriendRequestStatus> requestCheck(
             String senderUsername,
-            String receiverUsername,
-            String loggedUser) {
-        User sender = getUser(senderUsername);
-        User receiver = getUser(receiverUsername);
-        Optional<FriendRequest> request = friendRepo.findBySenderAndReceiver(sender, receiver);
+            String receiverUsername) {
+        User user1 = getUser(senderUsername);
+        User user2 = getUser(receiverUsername);
 
-        if(request.isEmpty()){
+        Optional<FriendRequest> request =
+                friendRepo.findFriendRelation(user1, user2);
+
+        if (request.isEmpty()) {
             return ResponseEntity.ok(FriendRequestStatus.None);
         }
 

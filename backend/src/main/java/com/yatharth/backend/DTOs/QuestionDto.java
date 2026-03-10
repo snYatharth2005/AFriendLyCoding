@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -15,5 +17,6 @@ public class QuestionDto {
     private String slug;
     private String difficulty;
     private String status;
+    private List<UserDto> users; //list of users who have solved this question
 //    private List<String> topics;
 }

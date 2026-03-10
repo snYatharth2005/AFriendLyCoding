@@ -9,6 +9,7 @@ public class UserMapper {
                 .email(user.getEmail())
                 .leetCodeUsername(user.getLeetcodeUsername())
                 .lastSyncedAt(user.getLastSyncedAt())
+                .avatar(user.getAvatar())
                 .build();
     }
 }

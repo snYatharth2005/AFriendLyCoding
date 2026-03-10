@@ -20,6 +20,7 @@ public class LeetCodeSyncController {
 
     @PostMapping("/sync")
     public ResponseEntity<?> syncQuestions(@RequestBody SyncRequest request, Principal principal){
+        System.out.println(principal.getName());
         return service.syncQuestions(request, principal.getName());
     }
 
