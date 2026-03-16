@@ -1,8 +1,6 @@
 package com.yatharth.backend.Service;
 
-import com.yatharth.backend.DTOs.FriendRequestDto;
-import com.yatharth.backend.DTOs.FriendRequestMapper;
-import com.yatharth.backend.DTOs.FriendRequestStatus;
+import com.yatharth.backend.DTOs.*;
 import com.yatharth.backend.Model.FriendRequest;
 import com.yatharth.backend.Model.User;
 import com.yatharth.backend.Repository.FriendRepository;
@@ -45,34 +43,41 @@ public class FriendService {
         return "Requested";
     }
 
-    public ResponseEntity<String> requestAccepted(
-            String receiverUsername,
-            Long senderId) {
-        User sender = userRepo.findById(senderId).get();
-
-        User receiver = getUser(receiverUsername);
-        FriendRequest request = friendRepo.findBySenderAndReceiver(sender, receiver).get();
-
+    public ResponseEntity<String> requestAccepted(String receiverUsername, Long requestId) {
+        FriendRequest request = friendRepo.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Friend request not found"));
 
         request.setStatus(FriendRequestStatus.ACCEPTED);
-
         friendRepo.save(request);
-
         return ResponseEntity.ok("Request Accepted");
     }
 
-    public ResponseEntity<String> requestRejected(
-            String receiverUsername,
-            Long senderId) {
-        User sender = userRepo.findById(senderId).get();
+    public ResponseEntity<String> requestRejected(String receiverUsername, Long requestId) {
+        FriendRequest request = friendRepo.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Friend request not found"));
 
-        User receiver = getUser(receiverUsername);
-
-        FriendRequest request = friendRepo.findBySenderAndReceiver(sender, receiver).get();
         request.setStatus(FriendRequestStatus.REJECTED);
         friendRepo.save(request);
-
         return ResponseEntity.ok("Request Rejected");
+    }
+
+    public List<FriendRequestDto> sentRequests(String username) {
+        User sender = getUser(username);
+        return friendRepo.findBySenderAndStatus(sender, FriendRequestStatus.PENDING)
+                .stream()
+                .map(FriendRequestMapper::toDto)
+                .toList();
+    }
+
+    public ResponseEntity<String> withdrawRequest(Long requestId, String senderUsername) {
+        FriendRequest request = friendRepo.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+        // only the sender can withdraw
+        if (!request.getSender().getUsername().equals(senderUsername)) {
+            return ResponseEntity.status(403).body("Not authorized");
+        }
+        friendRepo.delete(request);
+        return ResponseEntity.ok("Request withdrawn");
     }
 
     public ResponseEntity<FriendRequestStatus> requestCheck(
@@ -102,7 +107,7 @@ public class FriendService {
                 .map(FriendRequestMapper::toDto).toList();
     }
 
-    private User getUser(String username) {
+    public User getUser(String username) {
         return userRepo.findByUsername(username)
                 .orElseThrow(() ->
                         new RuntimeException("User not found: " + username)
@@ -130,5 +135,10 @@ public class FriendService {
                 .stream()
                 .map(FriendRequestMapper::toDto)
                 .toList();
+    }
+
+    //gives the user info
+    public UserDto getUserDto(String username) {
+        return UserMapper.toDto(getUser(username));
     }
 }

@@ -2,6 +2,7 @@ package com.yatharth.backend.Controller;
 
 import com.yatharth.backend.DTOs.FriendRequestDto;
 import com.yatharth.backend.DTOs.FriendRequestStatus;
+import com.yatharth.backend.DTOs.UserDto;
 import com.yatharth.backend.Model.FriendRequest;
 import com.yatharth.backend.Service.FriendService;
 import org.springframework.http.ResponseEntity;
@@ -49,5 +50,19 @@ public class FriendController {
         return service.requestIncoming(principal.getName());
     }
 
+    @GetMapping("get/user/{username}")
+    public UserDto getUserDto(@PathVariable String username){
+        return service.getUserDto(username);
+    }
 
+
+    @GetMapping("/requests/sent")
+    public List<FriendRequestDto> sentRequests(Principal principal) {
+        return service.sentRequests(principal.getName());
+    }
+
+    @DeleteMapping("/request/{id}/withdraw")
+    public ResponseEntity<String> withdrawRequest(@PathVariable Long id, Principal principal) {
+        return service.withdrawRequest(id, principal.getName());
+    }
 }

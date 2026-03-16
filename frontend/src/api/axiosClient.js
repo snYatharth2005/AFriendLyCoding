@@ -112,6 +112,22 @@ export const rejectFriendRequest = async (requestId) => {
   return res.data;
 };
 
+//using this in friendPage
+export const getFriendUser = async (username) => {
+  const res = await axiosClient.get(`/friends/get/user/${username}`);
+  return res.data; 
+};
+
+export const getSentFriendRequests = async () => {
+  const res = await axiosClient.get("/friends/requests/sent");
+  return res.data;
+};
+
+export const withdrawFriendRequest = async (requestId) => {
+  const res = await axiosClient.delete(`/friends/request/${requestId}/withdraw`);
+  return res.data;
+};
+
 export const getAcceptedFriends = async() => {
   const res = await axiosClient.get("/friends/accepted");
   return res.data;

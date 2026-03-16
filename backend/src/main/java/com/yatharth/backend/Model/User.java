@@ -38,6 +38,21 @@ public class User {
     @Column(unique = true)
     private String leetcodeUsername;
 
+    @Builder.Default
+    private Integer streak = 0;
+    @Builder.Default
+    private Integer solvedProblemsInAWeek = 0;
+    @Builder.Default
+    private Integer totalSolvedProblem = 0;
+
+    @Builder.Default
+    private Integer easyProblems = 0;
+    @Builder.Default
+    private Integer mediumProblems = 0;
+    @Builder.Default
+    private Integer hardProblems = 0;
+
+    @Builder.Default
     private LocalDateTime lastSyncedAt = null;
 
     @OneToMany(mappedBy = "user")

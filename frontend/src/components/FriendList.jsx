@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { getAcceptedFriends } from "../api/axiosClient";
+import { getAcceptedFriends, getFriendUser } from "../api/axiosClient";
 import FriendCard from "./FriendCard";
 
-/* ── Skeleton card ── */
 const SkeletonCard = () => (
   <div className="flex items-center gap-3 px-3 py-2.5 animate-pulse">
     <div className="w-9 h-9 rounded-xl bg-white/[0.07] flex-shrink-0" />
@@ -17,14 +16,32 @@ const FriendList = () => {
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadFriends();
-  }, []);
+  useEffect(() => { loadFriends(); }, []);
 
   const loadFriends = async () => {
+    const logged = localStorage.getItem("username");
     try {
-      const data = await getAcceptedFriends();
-      setFriends(data || []);
+      const raw = (await getAcceptedFriends()) || [];
+      const built = await Promise.all(
+        raw.map(async (f) => {
+          const friendUsername = logged === f.sender ? f.receiver : f.sender;
+          try {
+            const u = await getFriendUser(friendUsername);
+            console.log('[FriendList] UserDto for', friendUsername, u);
+            return {
+              name:             u?.username          ?? friendUsername,
+              avatar:           u?.avatar            ?? null,
+              leetcodeUsername: u?.leetCodeUsername  ?? null,
+              streak:           u?.streak            ?? null,
+              thisWeek:         u?.solvedInAWeek     ?? null,
+              solved:           u?.totalProblems     ?? 0,
+            };
+          } catch {
+            return { name: friendUsername, avatar: null, leetcodeUsername: null };
+          }
+        })
+      );
+      setFriends(built);
     } catch {
       setFriends([]);
     } finally {
@@ -32,24 +49,12 @@ const FriendList = () => {
     }
   };
 
-  /* ── Loading ── */
-  if (loading) {
-    return (
-      <div className="space-y-1">
-        {[1, 2, 3, 4].map((i) => (
-          <SkeletonCard key={i} />
-        ))}
-      </div>
-    );
-  }
+  if (loading) return <div className="space-y-1">{[1,2,3,4].map(i => <SkeletonCard key={i} />)}</div>;
 
-  /* ── Empty ── */
   if (friends.length === 0) {
     return (
       <div className="py-8 flex flex-col items-center gap-2.5">
-        <div className="w-10 h-10 rounded-xl bg-white/[0.04] flex items-center justify-center text-xl">
-          👥
-        </div>
+        <div className="w-10 h-10 rounded-xl bg-white/[0.04] flex items-center justify-center text-xl">👥</div>
         <p className="text-xs text-[#50566a] text-center leading-relaxed">
           No friends yet.<br />
           <span className="text-[#3b82f6]">Add some to compare progress!</span>
@@ -58,32 +63,16 @@ const FriendList = () => {
     );
   }
 
-  const logged = localStorage.getItem("username");
-
   return (
     <div className="space-y-0.5">
-      {friends.slice(0, 6).map((f) => {
-        const user =
-          logged === f.sender
-            ? {
-                name:                f.receiver,
-                avatar:              f.receiverAvatar,
-                leetcodeUsername:    f.receiverLeetCodeUsername,
-              }
-            : {
-                name:                f.sender,
-                avatar:              f.senderAvatar,
-                leetcodeUsername:    f.senderLeetCodeUsername,
-              };
-
-        return <FriendCard key={f.id} user={user} />;
-      })}
+      {/* friends is already built — pass directly to FriendCard */}
+      {friends.slice(0, 6).map((user, i) => (
+        <FriendCard key={i} user={user} />
+      ))}
 
       {friends.length > 6 && (
         <div className="pt-2 mt-1 border-t border-white/[0.05] text-center">
-          <span className="text-xs text-[#50566a] font-mono">
-            +{friends.length - 6} more friends
-          </span>
+          <span className="text-xs text-[#50566a] font-mono">+{friends.length - 6} more friends</span>
         </div>
       )}
     </div>

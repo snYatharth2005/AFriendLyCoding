@@ -29,4 +29,6 @@ public class UserSearchController {
     public UserProfileResponseDto getUserProfile(@RequestParam String username){
         return service.getProfile(username);
     }
+
+
 }

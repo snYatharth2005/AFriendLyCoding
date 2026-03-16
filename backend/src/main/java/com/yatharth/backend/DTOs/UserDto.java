@@ -15,4 +15,10 @@ public class UserDto {
     private String leetCodeUsername;
     private String avatar;
     private LocalDateTime lastSyncedAt;
+    private Integer streak;
+    private Integer solvedInAWeek;
+    private Integer totalProblems;
+    private Integer easyProblems;
+    private Integer mediumProblems;
+    private Integer hardProblems;
 }

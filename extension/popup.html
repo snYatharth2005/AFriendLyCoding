@@ -1,12 +1,191 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>AFriendlyCoding</title>
-  <link rel="stylesheet" href="popup.css" />
+  <meta charset="UTF-8"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#0b0d13; --card:#11131a; --elev:#161820;
+      --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.14);
+      --green:#00d084; --cyan:#06b6d4; --blue:#3b82f6; --red:#ef4743; --yellow:#ffc01e;
+      --t1:#f0f2f8; --t2:#8890a8; --t3:#50566a; --t4:#30354a;
+    }
+    body { width:300px; background:var(--bg); color:var(--t1);
+           font-family:'Segoe UI',system-ui,sans-serif; font-size:13px; -webkit-font-smoothing:antialiased; }
+
+    .header { padding:14px 16px 13px; background:linear-gradient(135deg,#001a0e,#0b1a12);
+              border-bottom:1px solid rgba(0,208,132,.15); display:flex; align-items:center; gap:10px; }
+    .logo { width:34px; height:34px; flex-shrink:0; background:linear-gradient(135deg,var(--green),var(--cyan));
+            border-radius:10px; display:flex; align-items:center; justify-content:center;
+            font-size:17px; box-shadow:0 0 18px rgba(0,208,132,.35); }
+    .header-text .title { font-size:13px; font-weight:700; color:var(--t1); letter-spacing:-.2px; }
+    .header-text .sub   { font-size:10px; color:rgba(0,208,132,.7); margin-top:1px; font-family:'Courier New',monospace; }
+
+    .body { padding:14px; }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:13px; padding:13px; margin-bottom:10px; }
+    .card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .card-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.1em; color:var(--t3); }
+
+    .field { margin-bottom:9px; }
+    .field label { display:block; font-size:10px; color:var(--t2); margin-bottom:4px; font-weight:500; text-transform:uppercase; letter-spacing:.06em; }
+    .field input { width:100%; background:var(--elev); border:1px solid var(--border); border-radius:9px;
+                   padding:8px 11px; color:var(--t1); font-size:12px; font-family:inherit; outline:none; transition:border-color .2s,box-shadow .2s; }
+    .field input:focus { border-color:rgba(0,208,132,.45); box-shadow:0 0 0 3px rgba(0,208,132,.08); }
+    .field input::placeholder { color:var(--t4); }
+
+    .btn { width:100%; padding:9px; border-radius:9px; font-size:12px; font-weight:600;
+           cursor:pointer; border:none; display:flex; align-items:center; justify-content:center;
+           gap:6px; transition:all .15s; font-family:inherit; margin-bottom:8px; }
+    .btn:last-child { margin-bottom:0; }
+    .btn-primary { background:linear-gradient(135deg,var(--green),#00b874); color:#000; }
+    .btn-primary:hover:not(:disabled) { filter:brightness(1.07); transform:translateY(-1px); box-shadow:0 4px 14px rgba(0,208,132,.3); }
+    .btn-primary:disabled { opacity:.45; cursor:not-allowed; transform:none; }
+    .btn-secondary { background:var(--elev); color:var(--t1); border:1px solid var(--border); }
+    .btn-secondary:hover:not(:disabled) { border-color:var(--border2); }
+    .btn-secondary:disabled { opacity:.45; cursor:not-allowed; }
+    .btn-ghost { background:transparent; color:var(--red); border:1px solid rgba(239,71,67,.2); }
+    .btn-ghost:hover { background:rgba(239,71,67,.07); border-color:rgba(239,71,67,.35); }
+
+    /* small icon button for refresh */
+    .btn-icon { width:24px; height:24px; padding:0; border-radius:6px; font-size:12px; flex-shrink:0;
+                background:var(--elev); border:1px solid var(--border); color:var(--t2);
+                cursor:pointer; display:flex; align-items:center; justify-content:center;
+                transition:all .15s; margin-bottom:0; }
+    .btn-icon:hover { border-color:var(--border2); color:var(--t1); }
+    .btn-icon:disabled { opacity:.4; cursor:not-allowed; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .spinning { display:inline-block; animation:spin .7s linear infinite; }
+
+    .status { margin-top:9px; padding:8px 10px; border-radius:8px; font-size:11px; line-height:1.5; display:none; }
+    .status.success { background:rgba(0,208,132,.08); color:var(--green); border:1px solid rgba(0,208,132,.2); }
+    .status.error   { background:rgba(239,71,67,.08);  color:var(--red);   border:1px solid rgba(239,71,67,.2); }
+    .status.info    { background:rgba(59,130,246,.08); color:var(--blue);  border:1px solid rgba(59,130,246,.2); }
+
+    .user-chip { display:flex; align-items:center; gap:9px; padding:9px 10px;
+                 background:var(--elev); border:1px solid var(--border); border-radius:10px; margin-bottom:10px; }
+    .avatar { width:30px; height:30px; flex-shrink:0; border-radius:8px;
+              background:linear-gradient(135deg,var(--green),var(--cyan));
+              display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; color:#000; }
+    .user-info .name   { font-size:12px; font-weight:600; color:var(--t1); }
+    .user-info .handle { font-size:10px; color:var(--t3); font-family:'Courier New',monospace; }
+    .online { width:7px; height:7px; border-radius:50%; background:var(--green); margin-left:auto;
+              box-shadow:0 0 7px rgba(0,208,132,.55); flex-shrink:0; }
+
+    .stats-grid-4 { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:0; }
+    .stat { background:var(--elev); border:1px solid rgba(255,255,255,.04); border-radius:9px; padding:9px 5px; text-align:center; }
+    .stat .val { font-size:18px; font-weight:700; font-family:'Courier New',monospace; line-height:1; }
+    .stat .lbl { font-size:9px; color:var(--t3); margin-top:3px; text-transform:uppercase; letter-spacing:.05em; }
+    .stat .sub-lbl { font-size:9px; color:var(--t3); margin-top:1px; }
+
+    @keyframes flicker { 0%,100%{opacity:1} 50%{opacity:.75} }
+    .streak-fire { display:inline-block; animation:flicker 1.4s ease-in-out infinite; }
+
+    .prog-wrap  { display:none; margin-top:8px; margin-bottom:4px; }
+    .prog-track { height:3px; background:rgba(255,255,255,.05); border-radius:2px; overflow:hidden; }
+    .prog-fill  { height:100%; border-radius:2px; width:0%; background:linear-gradient(90deg,var(--green),var(--cyan)); transition:width .3s ease; }
+    .prog-label { font-size:10px; color:var(--t3); margin-top:4px; font-family:'Courier New',monospace; }
+
+    .sync-badge { font-size:10px; color:var(--t3); font-family:'Courier New',monospace; margin-bottom:8px; display:none; }
+    .lc-status-tag { font-size:9px; font-family:'Courier New',monospace; color:var(--t4); }
+
+    .divider { border:none; border-top:1px solid var(--border); margin:10px 0; }
+    .hidden { display:none !important; }
+  </style>
 </head>
 <body>
-  <div id="app"></div>
-  <script src="popup.js"></script>
+  <div class="header">
+    <div class="logo">⚡</div>
+    <div class="header-text">
+      <div class="title">AFriendlyCoding</div>
+      <div class="sub">leetcode sync</div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- LOGIN -->
+    <div id="view-login">
+      <div class="card">
+        <div class="card-label" style="margin-bottom:10px">Sign in to your account</div>
+        <div class="field">
+          <label>Username</label>
+          <input id="inp-username" type="text" placeholder="your username" autocomplete="username"/>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input id="inp-password" type="password" placeholder="••••••••" autocomplete="current-password"/>
+        </div>
+        <button class="btn btn-primary" id="btn-login" style="margin-top:4px">🔑 Sign In</button>
+        <div id="login-status" class="status"></div>
+      </div>
+    </div>
+
+    <!-- HOME -->
+    <div id="view-home" class="hidden">
+
+      <div class="user-chip">
+        <div class="avatar" id="chip-avatar">A</div>
+        <div class="user-info">
+          <div class="name"   id="chip-name">—</div>
+          <div class="handle" id="chip-handle">—</div>
+        </div>
+        <div class="online"></div>
+      </div>
+
+      <!-- LIVE STATS card -->
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex;align-items:center;gap:7px">
+            <span class="card-label" style="margin-bottom:0">Live Stats</span>
+            <span class="lc-status-tag" id="lc-stats-status">—</span>
+          </div>
+          <button class="btn-icon" id="btn-refresh-stats" title="Refresh streak & this week">↻</button>
+        </div>
+        <div class="stats-grid-4">
+          <div class="stat">
+            <div class="val" style="color:var(--yellow)">
+              <span class="streak-fire">🔥</span><span id="streak-val">—</span>
+            </div>
+            <div class="lbl">Day Streak</div>
+          </div>
+          <div class="stat">
+            <div class="val" id="stat-this-week" style="color:var(--cyan)">—</div>
+            <div class="lbl">This Week</div>
+            <div class="sub-lbl">solved</div>
+          </div>
+          <div class="stat">
+            <div class="val" id="stat-solved" style="color:var(--green)">—</div>
+            <div class="lbl">Total Synced</div>
+          </div>
+          <div class="stat">
+            <div class="val" id="stat-total" style="color:var(--t2);font-size:11px">—</div>
+            <div class="lbl">Last Sync</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SYNC card -->
+      <div class="card">
+        <div class="card-label">Sync</div>
+        <div class="sync-badge" id="last-sync-badge">🕐 <span id="last-sync-time">—</span></div>
+
+        <button class="btn btn-primary" id="btn-sync-lc">🔄 Sync Problems</button>
+        <div class="prog-wrap" id="prog-wrap-lc">
+          <div class="prog-track"><div class="prog-fill" id="prog-fill-lc"></div></div>
+          <div class="prog-label" id="prog-label-lc">Fetching…</div>
+        </div>
+        <div id="sync-lc-status" class="status"></div>
+
+        <hr class="divider">
+
+        <button class="btn btn-secondary" id="btn-sync-profile">👤 Sync Profile</button>
+        <div id="sync-profile-status" class="status"></div>
+      </div>
+
+      <button class="btn btn-ghost" id="btn-logout">↩ Sign Out</button>
+    </div>
+
+  </div>
+  <script src="src/popup.js"></script>
 </body>
 </html>

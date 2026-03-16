@@ -10,12 +10,8 @@ public class FriendRequestMapper {
                 .id(request.getId())
                 .sender(request.getSender().getUsername())
                 .receiver(request.getReceiver().getUsername())
-                .senderAvatar(request.getSender().getAvatar())
-                .SenderLeetCodeUsername(request.getSender().getLeetcodeUsername())
-                .senderId(request.getSender().getId())
-                .receiverId(request.getReceiver().getId())
-                .receiverAvatar(request.getReceiver().getAvatar())
-                .receiverLeetCodeUsername(request.getReceiver().getLeetcodeUsername())
+                .senderUser(UserMapper.toDto(request.getSender()))
+                .receiverUser(UserMapper.toDto(request.getReceiver()))
                 .build();
     }
 }

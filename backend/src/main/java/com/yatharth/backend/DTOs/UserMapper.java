@@ -3,13 +3,19 @@ package com.yatharth.backend.DTOs;
 import com.yatharth.backend.Model.User;
 
 public class UserMapper {
-    public static UserDto toDto(User user){
+    public static UserDto toDto(User user) {
         return UserDto.builder()
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .leetCodeUsername(user.getLeetcodeUsername())
                 .lastSyncedAt(user.getLastSyncedAt())
                 .avatar(user.getAvatar())
+                .solvedInAWeek(user.getSolvedProblemsInAWeek())
+                .streak(user.getStreak())
+                .totalProblems(user.getTotalSolvedProblem())
+                .easyProblems(user.getEasyProblems())
+                .mediumProblems(user.getMediumProblems())
+                .hardProblems(user.getHardProblems())
                 .build();
     }
 }

@@ -41,4 +41,5 @@ public interface SolvedQuestionRepository extends JpaRepository<SolvedQuestion, 
 """)
     Set<String> findSolvedSlugsByUserId(Long userId);
 
+    List<SolvedQuestion> findByUser(User user);
 }
