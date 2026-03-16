@@ -302,19 +302,40 @@ const FriendsPage = () => {
   const loadFriends = async () => {
     try {
       const raw = (await getAcceptedFriends()) || [];
-      // Fetch full UserDto for each friend via GET /friends/get/user/{username}
-      const built = await Promise.all(
+
+      // Fetch full UserDto for each friend
+      const builtFriends = await Promise.all(
         raw.map(async (f) => {
           const friendUsername = resolveFriendName(f, loggedUser);
           try {
             const userDto = await getFriendUser(friendUsername);
             return buildFriendObj(f, userDto, loggedUser);
           } catch {
-            return buildFriendObj(f, null, loggedUser); // fallback
+            return buildFriendObj(f, null, loggedUser);
           }
         })
       );
-      setFriends(built);
+
+      // Also fetch self and add to list so you appear in leaderboard
+      let selfObj = null;
+      try {
+        const selfDto = await getFriendUser(loggedUser);
+        selfObj = {
+          id:       "self",
+          name:     selfDto?.username    ?? loggedUser,
+          avatar:   selfDto?.avatar      ?? null,
+          lc:       selfDto?.leetCodeUsername ?? null,
+          streak:   selfDto?.streak      ?? null,
+          thisWeek: selfDto?.solvedInAWeek ?? null,
+          solved:   selfDto?.totalProblems  ?? 0,
+          easy:     selfDto?.easyProblems   ?? 0,
+          medium:   selfDto?.mediumProblems ?? 0,
+          hard:     selfDto?.hardProblems   ?? 0,
+          isSelf:   true,
+        };
+      } catch { /* non-fatal */ }
+
+      setFriends(selfObj ? [selfObj, ...builtFriends] : builtFriends);
     } catch { setFriends([]); }
   };
 
@@ -393,7 +414,7 @@ const FriendsPage = () => {
               ? [1,2,3,4].map(i => <SkeletonFriendCard key={i} />)
               : friends.length === 0
               ? <EmptyState icon="🤝" text="No friends yet" sub="Use the search bar above to find and add users!" />
-              : friends.map(f => (
+              : friends.filter(f => !f.isSelf).map(f => (
                   <FriendCard key={f.id} friend={f} removing={loadingId === f.id} onRemove={() => handleRemove(f.id)} />
                 ))
             }
@@ -415,20 +436,23 @@ const FriendsPage = () => {
               : friends.length === 0
               ? <div className="flex flex-col items-center py-16 gap-3"><span className="text-4xl opacity-25">🏆</span><p className="text-[#8890a8] text-sm">Add friends to see the leaderboard</p></div>
               : leaderboard.map((u, i) => (
-                  <div key={u.id} className={`grid grid-cols-[44px_1fr_70px_70px_70px_80px] gap-3 items-center px-5 py-3.5 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors ${i === 0 ? "bg-[#00d084]/[0.03]" : ""}`}>
+                  <div key={u.id} className={`grid grid-cols-[44px_1fr_70px_70px_70px_80px] gap-3 items-center px-5 py-3.5 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors ${i === 0 ? "bg-[#00d084]/[0.03]" : ""} ${u.isSelf ? "bg-[#3b82f6]/[0.03]" : ""}`}>
                     <div className="text-lg leading-none">{medalFor(i) ?? <span className="text-sm font-mono text-[#50566a]">#{i+1}</span>}</div>
                     <div className="flex items-center gap-3 min-w-0">
                       <Avatar src={u.avatar} name={u.name} size="xs" />
                       <div className="min-w-0">
-                        <Link to={`/profile/${u.name}`}>
-                          <p className="text-sm font-semibold truncate hover:text-[#00d084] transition-colors text-[#c8ccd8]">{u.name}</p>
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link to={u.isSelf ? "/profile/me" : `/profile/${u.name}`}>
+                            <p className="text-sm font-semibold truncate hover:text-[#00d084] transition-colors text-[#c8ccd8]">{u.name}</p>
+                          </Link>
+                          {u.isSelf && <span className="text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-[#3b82f6]/10 text-[#3b82f6] border border-[#3b82f6]/20 flex-shrink-0">you</span>}
+                        </div>
                         <p className="text-[11px] text-[#50566a] font-mono truncate">@{u.lc || u.name?.toLowerCase()}</p>
                       </div>
                     </div>
-                    <div className="text-right font-mono text-sm text-[#00d084]">{solved ?? "—"}</div>
+                    <div className="text-right font-mono text-sm text-[#00d084]">{u.solved ?? "—"}</div>
                     <div className="text-right font-mono text-sm text-[#ef4743]">{u.hard ?? "—"}</div>
-                    <div className="text-right font-mono text-sm text-[#06b6d4]">{thisWeek ?? "—"}</div>
+                    <div className="text-right font-mono text-sm text-[#06b6d4]">{u.thisWeek ?? "—"}</div>
                     <div className="text-right font-mono text-sm text-[#3b82f6]">{u.streak != null ? `${u.streak}d` : "—"}</div>
                   </div>
                 ))
